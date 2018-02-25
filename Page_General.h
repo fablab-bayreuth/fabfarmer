@@ -16,7 +16,7 @@ const char PAGE_AdminGeneralSettings[] PROGMEM =  R"=====(
 <table border="0"  cellspacing="0" cellpadding="3" >
 <tr>
 	<td align="right">Gerätename:</td>
-	<td><input type="text" id="devicename" name="devicename" value=""></td>
+	<td><input type="text" id="devicename" name="devicename" value="" maxlength="32"></td>
 </tr>
 <tr>
   <td align="right"> IoT Client aktiv:</td>
@@ -24,15 +24,15 @@ const char PAGE_AdminGeneralSettings[] PROGMEM =  R"=====(
 </tr>
 <tr>
   <td align="right">IoT User Name:</td>
-  <td><input type="text" id="iotusername" name="iotusername" value=""></td>
+  <td><input type="text" id="iotusername" name="iotusername" value="" maxlength="32"></td>
 </tr>
 <tr>
   <td align="right">IoT Device ID:</td>
-  <td><input type="text" id="iotdeviceid" name="iotdeviceid" value=""></td>
+  <td><input type="text" id="iotdeviceid" name="iotdeviceid" value="" maxlength="32"></td>
 </tr>
 <tr>
   <td align="right">IoT Credential:</td>
-  <td><input type="text" id="iotcredential" name="iotcredential" value=""></td>
+  <td><input type="text" id="iotcredential" name="iotcredential" value="" maxlength="32"></td>
 </tr>
 
 <tr>
@@ -49,11 +49,11 @@ const char PAGE_AdminGeneralSettings[] PROGMEM =  R"=====(
 
 <tr>
 	<td align="right"> Einschaltzeit:</td>
-	<td><input type="text" id="tonhour" name="tonhour" size="2" value="00">:<input type="text" id="tonminute" name="tonminute" size="2" value="00"></td>
+	<td><input type="text" id="tonhour" name="tonhour" size="2" value="00" maxlength="2">:<input type="text" id="tonminute" name="tonminute" size="2" value="00" maxlength="2"></td>
 </tr>
 <tr>
 	<td align="right"> Ausschaltzeit:</td>
-	<td><input type="text" id="toffhour" name="toffhour" size="2" value="00">:<input type="text" id="toffminute" name="toffminute" size="2" value="00"></td>
+	<td><input type="text" id="toffhour" name="toffhour" size="2" value="00" maxlength="2">:<input type="text" id="toffminute" name="toffminute" size="2" value="00" maxlength="2"></td>
 </tr>
 
 <tr>
@@ -66,7 +66,7 @@ const char PAGE_AdminGeneralSettings[] PROGMEM =  R"=====(
 
 <tr>
 	<td align="right"> Sensor auslesen:</td>
-	<td><input type="text" id="sensrefreshtime" name="sensrefreshtime" size="3" value="1"> Minuten (0=deaktiv)</td>
+	<td><input type="text" id="sensrefreshtime" name="sensrefreshtime" size="3" value="1" maxlength="4"> Minuten (0=deaktiv)</td>
 </tr>
 
 <tr>
@@ -78,13 +78,13 @@ const char PAGE_AdminGeneralSettings[] PROGMEM =  R"=====(
 </tr>
 
 <tr>
-	<td align="right"> Maximalwert für 100%:</td>
-	<td><input type="text" id="senscalmax" name="senscalmax" size="3" value="900"></td>
+  <td align="right"> Wert für maximale Anzeige: (~100%)</td>
+  <td><input type="text" id="senscalmin" name="senscalmin" size="3" value="50" maxlength="4"></td>
 </tr>
 
 <tr>
-  <td align="right"> Minimalwert für 0%:</td>
-  <td><input type="text" id="senscalmin" name="senscalmin" size="3" value="50"></td>
+  <td align="right"> Wert für minimale Anzeige (~0%):</td>
+  <td><input type="text" id="senscalmax" name="senscalmax" size="3" value="900" maxlength="4"></td>
 </tr>
 
 <tr>

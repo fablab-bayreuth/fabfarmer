@@ -1,5 +1,5 @@
 /*
-  FabFarmer Version 1.1  by JTL / thirsch
+  FabFarmer Version 1.2  by JTL / thirsch
 
   Configurator Engine based on
   ESP_WebConfig Latest version: 1.1.3  - 2015-07-20
@@ -18,7 +18,7 @@
 #include "helpers.h"
 #include "global.h"
 
-#define PGNV "1.1"
+#define PGNV "1.2"
 #define ACCESS_POINT_NAME  "FabFarmer"
 #define ACCESS_POINT_PASSWORD  "12345678"
 #define AdminTimeOut 600  // Defines the Time in Seconds, when the Admin-Mode will be diabled
