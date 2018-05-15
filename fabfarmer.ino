@@ -31,7 +31,7 @@
 #include "Page_Script.js.h"
 #include "Page_Chart.h"
 #include "Page_Style.css.h"
-#include "Page_NTPsettings.h"
+#include "Page_NTPSettings.h"
 #include "Page_Information.h"
 #include "Page_General.h"
 #include "PAGE_NetworkConfiguration.h"
