@@ -1,10 +1,12 @@
 /*
-  FabFarmer Version 1.2  by JTL / thirsch
+  FabFarmer Version 2.0  by JTL / thirsch
 
   Configurator Engine based on
   ESP_WebConfig Latest version: 1.1.3  - 2015-07-20
   Special thanks to John Lassen
- 
+
+
+  TODO: FabFarmer-Logo als Bild-Datei einmalig ablegen und nicht mehr base64 codieren!
 */
 
 #include <ESP8266WiFi.h>
@@ -17,32 +19,82 @@
 #include <ThingerWifi.h>
 #include "helpers.h"
 #include "global.h"
+#include <FS.h>
 
-#define PGNV "1.2"
-#define ACCESS_POINT_NAME  "FabFarmer"
+#define PGNV "2.0"
+#define ACCESS_POINT_NAME  "FabFarmer2"
 #define ACCESS_POINT_PASSWORD  "12345678"
 #define AdminTimeOut 600  // Defines the Time in Seconds, when the Admin-Mode will be diabled
 
 /*
   Include the HTML, STYLE and Script "Pages"
 */
-#include "Page_Root.h"
-#include "Page_Admin.h"
-#include "Page_Script.js.h"
-#include "Page_Chart.h"
-#include "Page_Style.css.h"
 #include "Page_NTPSettings.h"
 #include "Page_Information.h"
 #include "Page_General.h"
 #include "PAGE_NetworkConfiguration.h"
 #include "PAGE_FabFarmer.h"
 
+String getContentType(String filename) {
+  if (server.hasArg("download")) {
+    return "application/octet-stream";
+  } else if (filename.endsWith(".htm")) {
+    return "text/html";
+  } else if (filename.endsWith(".html")) {
+    return "text/html";
+  } else if (filename.endsWith(".css")) {
+    return "text/css";
+  } else if (filename.endsWith(".js")) {
+    return "application/javascript";
+  } else if (filename.endsWith(".png")) {
+    return "image/png";
+  } else if (filename.endsWith(".gif")) {
+    return "image/gif";
+  } else if (filename.endsWith(".jpg")) {
+    return "image/jpeg";
+  } else if (filename.endsWith(".ico")) {
+    return "image/x-icon";
+  } else if (filename.endsWith(".xml")) {
+    return "text/xml";
+  } else if (filename.endsWith(".pdf")) {
+    return "application/x-pdf";
+  } else if (filename.endsWith(".zip")) {
+    return "application/x-zip";
+  } else if (filename.endsWith(".gz")) {
+    return "application/x-gzip";
+  }
+  return "text/plain";
+}
+
+bool handleFileRead(String path) {
+  Serial.println("handleFileRead: " + path);
+  if (path.endsWith("/")) {
+    path += "index.htm";
+  }
+  String contentType = getContentType(path);
+  String pathWithGz = path + ".gz";
+  if (SPIFFS.exists(pathWithGz) || SPIFFS.exists(path)) {
+    if (SPIFFS.exists(pathWithGz)) {
+      path += ".gz";
+    }
+
+    sendCacheHeader();
+    
+    File file = SPIFFS.open(path, "r");
+    server.streamFile(file, contentType);
+    file.close();
+    return true;
+  }
+  return false;
+}
+
 void setup ( void ) {
   EEPROM.begin(512);
   Serial.begin(115200);
+  SPIFFS.begin();
   delay(500);
 
-  pinMode(BUILTIN_LED, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
 
   // set Solide Moisture Sensor (SMS)
   pinMode(A0, INPUT); // Moisture Sensor Analog Output
@@ -92,12 +144,13 @@ void setup ( void ) {
 
   if (AdminEnabled)
   {
+    Serial.println("Admin enabled.");
     WiFi.mode(WIFI_AP_STA);
 
     char buffer[33];
     sprintf(buffer, "%s_%06x", ACCESS_POINT_NAME, ESP.getChipId());
     
-    WiFi.softAP(buffer, ACCESS_POINT_PASSWORD);
+    WiFi.softAP(buffer); // , ACCESS_POINT_PASSWORD);
   }
   else
   {
@@ -105,47 +158,15 @@ void setup ( void ) {
   }
   ConfigureWifi();
 
-  server.on ( "/", processFabFarmer  );
+  server.on ( "/", []() {
+    handleFileRead("fabfarmer.html");
+  });
   server.on ( "/admin/filldynamicdata", filldynamicdata );
 
-  server.on ( "/favicon.ico",   []() {
-    Serial.println("favicon.ico");
-    sendCacheHeader();
-    server.send ( 200, "text/html", "" );
-  }  );
-
-  server.on ( "/admin.html", []() {
-    Serial.println("admin.html");
-    sendCacheHeader();
-    server.send_P ( 200, "text/html", PAGE_AdminMainPage );
-  }  );
   server.on ( "/config.html", send_network_configuration_html );
-  server.on ( "/info.html", []() {
-    Serial.println("info.html");
-    sendCacheHeader();
-    server.send_P ( 200, "text/html", PAGE_Information );
-  }  );
   server.on ( "/ntp.html", send_NTP_configuration_html  );
   server.on ( "/general.html", send_general_html  );
-  server.on ( "/fabfarmer.html", []() {
-    sendCacheHeader();
-    server.send_P ( 200, "text/html", PAGE_FabFarmer );
-  } );
-  server.on ( "/style.css", []() {
-    Serial.println("style.css");
-    sendCacheHeader();
-    server.send_P ( 200, "text/css", PAGE_Style_css );
-  } );
-  server.on ( "/microajax.js", []() {
-    Serial.println("microajax.js");
-    sendCacheHeader();
-    server.send_P ( 200, "application/javascript", PAGE_microajax_js );
-  } );
-  server.on ( "/chart.min.js", []() {
-    Serial.println("chart.min.js");
-    sendCacheHeader();
-    server.send_P ( 200, "application/javascript", PAGE_chart_js );
-  } );
+  
   server.on ( "/admin/values", send_network_configuration_values_html );
   server.on ( "/admin/connectionstate", send_connection_state_values_html );
   server.on ( "/admin/sensrefreshtimes", send_information_values_html );
@@ -153,10 +174,13 @@ void setup ( void ) {
   server.on ( "/admin/generalvalues", send_general_configuration_values_html);
   server.on ( "/admin/devicename",     send_devicename_value_html);
 
-  server.onNotFound ( []() {
-    Serial.println("Page Not Found");
-    server.send ( 400, "text/html", "404 Error ... Page not found" );
-  }  );
+  //called when the url is not defined here
+  //use it to load content from SPIFFS
+  server.onNotFound([]() {
+    if (!handleFileRead(server.uri())) {
+      server.send(404, "text/plain", "404 Error ... Page not found");
+    }
+  });
   server.begin();
   Serial.println( "HTTP server started" );
   tkSecond.attach(1, Second_Tick);
@@ -246,5 +270,3 @@ void loop ( void ) {
 
   blinkLED();
 }
-
-

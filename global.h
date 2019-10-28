@@ -429,7 +429,7 @@ void blinkLED ()
           LEDinterval = LEDpuls * LEDPWM;
         }
 
-      digitalWrite(BUILTIN_LED, LEDState);     // set the LED with the LEDState of the variable:
+      digitalWrite(LED_BUILTIN, LEDState);     // set the LED with the LEDState of the variable:
     }
 }
 
