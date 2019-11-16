@@ -1,5 +1,5 @@
 /*
-  FabFarmer Version 1.2  by JTL / thirsch
+  FabFarmer Version 1.3  by JTL / thirsch
 
   Configurator Engine based on
   ESP_WebConfig Latest version: 1.1.3  - 2015-07-20
@@ -7,6 +7,8 @@
  
 */
 
+#include <Arduino.h>
+#include <Esp.h>
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
@@ -18,11 +20,12 @@
 #include "helpers.h"
 #include "global.h"
 
-#define PGNV "1.2"
+#define PGNV "1.3"
 #define ACCESS_POINT_NAME  "FabFarmer"
 #define ACCESS_POINT_PASSWORD  "12345678"
 #define AdminTimeOut 600  // Defines the Time in Seconds, when the Admin-Mode will be diabled
 
+const char *myHostname = "fabfarmer";
 /*
   Include the HTML, STYLE and Script "Pages"
 */
@@ -37,12 +40,17 @@
 #include "PAGE_NetworkConfiguration.h"
 #include "PAGE_FabFarmer.h"
 
+#include "DNSServer.h"
+
+const byte DNS_PORT = 53;
+DNSServer dnsServer;
+
 void setup ( void ) {
   EEPROM.begin(512);
   Serial.begin(115200);
   delay(500);
 
-  pinMode(BUILTIN_LED, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
 
   // set Solide Moisture Sensor (SMS)
   pinMode(A0, INPUT); // Moisture Sensor Analog Output
@@ -54,11 +62,17 @@ void setup ( void ) {
 
   Serial.printf("Starting FabFarmer %s\n", PGNV);
 
+  IPAddress apIp(192, 168, 4, 1);
+
+  /* Setup the DNS server redirecting all the domains to the apIP */
+  dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
+  dnsServer.start(DNS_PORT, "*", apIp);
+
   if (!ReadConfig())
   {
     // DEFAULT CONFIG
-    config.ssid = "ArduinoGast";
-    config.password = "arduinoUNO123";
+    config.ssid = "myssid";
+    config.password = "mypassword";
     config.dhcp = true;
     config.IP[0] = 192; config.IP[1] = 168; config.IP[2] = 1; config.IP[3] = 100;
     config.Netmask[0] = 255; config.Netmask[1] = 255; config.Netmask[2] = 255; config.Netmask[3] = 0;
@@ -89,14 +103,12 @@ void setup ( void ) {
     Serial.println("General config applied");
   }
 
+  char buffer[33];
+  sprintf(buffer, "%s_%06x", ACCESS_POINT_NAME, ESP.getChipId());
 
   if (AdminEnabled)
   {
     WiFi.mode(WIFI_AP_STA);
-
-    char buffer[33];
-    sprintf(buffer, "%s_%06x", ACCESS_POINT_NAME, ESP.getChipId());
-    
     WiFi.softAP(buffer, ACCESS_POINT_PASSWORD);
   }
   else
@@ -153,10 +165,7 @@ void setup ( void ) {
   server.on ( "/admin/generalvalues", send_general_configuration_values_html);
   server.on ( "/admin/devicename",     send_devicename_value_html);
 
-  server.onNotFound ( []() {
-    Serial.println("Page Not Found");
-    server.send ( 400, "text/html", "404 Error ... Page not found" );
-  }  );
+  server.onNotFound (handleNotFound);
   server.begin();
   Serial.println( "HTTP server started" );
   tkSecond.attach(1, Second_Tick);
@@ -167,6 +176,7 @@ void setup ( void ) {
 
 void loop ( void ) {
   // Als erstes wieder eine evtl. neue Seite "bereitstellen", danach werden ggf. Admin abgeschaltet, NTP aktualisiert etc.
+  dnsServer.processNextRequest();
   server.handleClient();
 
   if (AdminEnabled)
@@ -246,5 +256,3 @@ void loop ( void ) {
 
   blinkLED();
 }
-
-
