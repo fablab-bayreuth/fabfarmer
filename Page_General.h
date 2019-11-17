@@ -126,20 +126,20 @@ window.onload = function ()
 
 
 // Functions for this Page
-void send_devicename_value_html()
+void send_devicename_value_html(AsyncWebServerRequest *request)
 {
 		
 	String values ="";
 	values += "devicename|" + (String) config.DeviceName + "|div\n";
-	server.send ( 200, "text/plain", values);
+	request->send ( 200, "text/plain", values);
 	Serial.println(__FUNCTION__); 
 	
 }
 
-void send_general_html()
+void send_general_html(AsyncWebServerRequest *request)
 {
 	
-	if (server.args() > 0 )  // Save Settings
+	if (request->args() > 0 )  // Save Settings
 	{
 		config.AutoTurnOn = false;
 		config.AutoTurnOff = false;
@@ -147,22 +147,22 @@ void send_general_html()
     config.LEDOn = false;
     
 		String temp = "";
-		for ( uint8_t i = 0; i < server.args(); i++ ) {
-			if (server.argName(i) == "devicename") config.DeviceName = urldecode(server.arg(i)); 
-      if (server.argName(i) == "iotenabled") config.IoTOn = true; 
-      if (server.argName(i) == "iotusername") config.IoTUserName = urldecode(server.arg(i)); 
-      if (server.argName(i) == "iotdeviceid") config.IoTDeviceID = urldecode(server.arg(i)); 
-      if (server.argName(i) == "iotcredential") config.IoTCredential = urldecode(server.arg(i)); 
- 			if (server.argName(i) == "tonenabled") config.AutoTurnOn = true; 
-			if (server.argName(i) == "tonhour") config.TurnOnHour =  server.arg(i).toInt(); 
-			if (server.argName(i) == "tonminute") config.TurnOnMinute =  server.arg(i).toInt(); 
-			if (server.argName(i) == "toffhour") config.TurnOffHour =  server.arg(i).toInt(); 
-			if (server.argName(i) == "toffminute") config.TurnOffMinute =  server.arg(i).toInt(); 
-			if (server.argName(i) == "ledenabled") config.LEDOn = true; // switch enabled status LED
-			if (server.argName(i) == "sensrefreshtime") config.SensRefreshTime =  server.arg(i).toInt(); 
-			if (server.argName(i) == "senscalmax") config.SensCalMax =  server.arg(i).toInt(); 
-      if (server.argName(i) == "senscalmin") config.SensCalMin =  server.arg(i).toInt();  
-      if (server.argName(i) == "senscalc") config.SensCalc =  server.arg(i).toInt();         
+		for ( uint8_t i = 0; i < request->args(); i++ ) {
+			if (request->argName(i) == "devicename") config.DeviceName = urldecode(request->arg(i)); 
+      if (request->argName(i) == "iotenabled") config.IoTOn = true; 
+      if (request->argName(i) == "iotusername") config.IoTUserName = urldecode(request->arg(i)); 
+      if (request->argName(i) == "iotdeviceid") config.IoTDeviceID = urldecode(request->arg(i)); 
+      if (request->argName(i) == "iotcredential") config.IoTCredential = urldecode(request->arg(i)); 
+ 			if (request->argName(i) == "tonenabled") config.AutoTurnOn = true; 
+			if (request->argName(i) == "tonhour") config.TurnOnHour =  request->arg(i).toInt(); 
+			if (request->argName(i) == "tonminute") config.TurnOnMinute =  request->arg(i).toInt(); 
+			if (request->argName(i) == "toffhour") config.TurnOffHour =  request->arg(i).toInt(); 
+			if (request->argName(i) == "toffminute") config.TurnOffMinute =  request->arg(i).toInt(); 
+			if (request->argName(i) == "ledenabled") config.LEDOn = true; // switch enabled status LED
+			if (request->argName(i) == "sensrefreshtime") config.SensRefreshTime =  request->arg(i).toInt(); 
+			if (request->argName(i) == "senscalmax") config.SensCalMax =  request->arg(i).toInt(); 
+      if (request->argName(i) == "senscalmin") config.SensCalMin =  request->arg(i).toInt();  
+      if (request->argName(i) == "senscalc") config.SensCalc =  request->arg(i).toInt();         
 		}
 		WriteConfig();
     ConfigureIoT();
@@ -170,13 +170,13 @@ void send_general_html()
     Sens_Value = -1;
 	}
 
-	server.send_P ( 200, "text/html", PAGE_AdminGeneralSettings ); 
+	request->send_P ( 200, "text/html", PAGE_AdminGeneralSettings ); 
 	Serial.println(__FUNCTION__); 
 	
 	
 }
 
-void send_general_configuration_values_html()
+void send_general_configuration_values_html(AsyncWebServerRequest *request)
 {
 	String values ="";
 	values += "devicename|" +  (String)  config.DeviceName +  "|input\n";
@@ -194,6 +194,6 @@ void send_general_configuration_values_html()
 	values += "senscalmax|" +   (String)  config.SensCalMax +  "|input\n";
   values += "senscalmin|" +   (String)  config.SensCalMin +  "|input\n";
   values += "senscalc|" +   (String)  config.SensCalc +  "|input\n";
-	server.send ( 200, "text/plain", values);
+	request->send ( 200, "text/plain", values);
 	Serial.println(__FUNCTION__); 
 }

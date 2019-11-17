@@ -59,7 +59,7 @@ function load(e,t,n){if("js"==t){var a=document.createElement("script");a.src=e,
 // FILL WITH INFOMATION
 // 
 
-void send_information_values_html ()
+void send_information_values_html(AsyncWebServerRequest *request)
 {
 
 	String values ="";
@@ -78,7 +78,7 @@ void send_information_values_html ()
   sprintf(buffer, "x_ntpd|%02d.%02d.%04d|div\n", DateTime.day, DateTime.month, DateTime.year);
   values += buffer;
 
-  server.send ( 200, "text/plain", values);
+  request->send ( 200, "text/plain", values);
 
 	Serial.println(__FUNCTION__);
 }

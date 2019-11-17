@@ -1,17 +1,44 @@
 /*
-  FabFarmer Version 1.3  by JTL / thirsch
+========================================================================================
+  FabFarmer Version 1.4  by JTL / thirsch
+  FabLab-Bayreuth e.V.
+  fablab-bayreuth.de
 
   Configurator Engine based on
   ESP_WebConfig Latest version: 1.1.3  - 2015-07-20
   Special thanks to John Lassen
- 
+========================================================================================
+  Hardware: 
+    * Wemos D1 mini (ESP-8266EX), 
+    * LM393 based soil moisture sensor
+  Pin map:
+    D5         GND of sensor
+    D6         VCC of sensor
+    D0         digital out of sensor
+    A0         analog out of sensor
+    
+========================================================================================
+ Board: Wemos D1 Mini
+ (Add http://arduino.esp8266.com/stable/package_esp8266com_index.json to your moard manager path)
+========================================================================================
+ Libraries:
+   ESPAsyncTCP (https://github.com/me-no-dev/ESPAsyncTCP)
+   ESPAsyncWebServer (https://github.com/me-no-dev/ESPAsyncWebServer)
+   Thinger.io
+========================================================================================
+ Notes for programming the ESP8266:
+   There is a cooperative task scheduler running on this device. The user's loop() function
+   is only one among other task. In order to give execution time to other tasks, return from
+   the loop() function, or call delay(), eg. delay(0). If the user task blocks for too long,
+   network connections may break off.
+========================================================================================
 */
 
 #include <Arduino.h>
 #include <Esp.h>
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
-#include <ESP8266WebServer.h>
+#include <ESPAsyncWebServer.h>
 #include <Ticker.h>
 #include <EEPROM.h>
 #include <WiFiUdp.h>
@@ -20,12 +47,11 @@
 #include "helpers.h"
 #include "global.h"
 
-#define PGNV "1.3"
+#define PGNV "1.4"
 #define ACCESS_POINT_NAME  "FabFarmer"
 #define ACCESS_POINT_PASSWORD  "12345678"
 #define AdminTimeOut 600  // Defines the Time in Seconds, when the Admin-Mode will be diabled
 
-const char *myHostname = "fabfarmer";
 /*
   Include the HTML, STYLE and Script "Pages"
 */
@@ -41,9 +67,15 @@ const char *myHostname = "fabfarmer";
 #include "PAGE_FabFarmer.h"
 
 #include "DNSServer.h"
+#include "CaptiveRequestHandler.h"
+#include "SoilMoistureSensor.h"
 
 const byte DNS_PORT = 53;
 DNSServer dnsServer;
+
+const char *myHostname = "fabfarmer";
+
+SoilMoistureSensor s1(A0, D1, D6, D5);
 
 void setup ( void ) {
   EEPROM.begin(512);
@@ -51,14 +83,6 @@ void setup ( void ) {
   delay(500);
 
   pinMode(LED_BUILTIN, OUTPUT);
-
-  // set Solide Moisture Sensor (SMS)
-  pinMode(A0, INPUT); // Moisture Sensor Analog Output
-  pinMode(D0, INPUT); // Moisture Sensor Digital Output
-  pinMode(D5, OUTPUT); // Moisture Sensor GND
-  pinMode(D6, OUTPUT); // Moisture Sensor VCC
-  digitalWrite(D5, LOW);
-  digitalWrite(D6, LOW); // Sensor OFF
 
   Serial.printf("Starting FabFarmer %s\n", PGNV);
 
@@ -103,6 +127,8 @@ void setup ( void ) {
     Serial.println("General config applied");
   }
 
+  s1.begin(config.SensCalMin, config.SensCalMax, config.SensCalc);
+
   char buffer[33];
   sprintf(buffer, "%s_%06x", ACCESS_POINT_NAME, ESP.getChipId());
 
@@ -117,46 +143,55 @@ void setup ( void ) {
   }
   ConfigureWifi();
 
+  server.addHandler(new CaptiveRequestHandler(myHostname)).setFilter(ON_AP_FILTER);
   server.on ( "/", processFabFarmer  );
   server.on ( "/admin/filldynamicdata", filldynamicdata );
 
-  server.on ( "/favicon.ico",   []() {
+  server.on ( "/favicon.ico",   [](AsyncWebServerRequest *request) {
     Serial.println("favicon.ico");
-    sendCacheHeader();
-    server.send ( 200, "text/html", "" );
+    AsyncWebServerResponse *response = request->beginResponse(200, "text/html", "");
+    sendCacheHeader(response);
+    request->send(response);
   }  );
 
-  server.on ( "/admin.html", []() {
+  server.on ( "/admin.html", [](AsyncWebServerRequest *request) {
     Serial.println("admin.html");
-    sendCacheHeader();
-    server.send_P ( 200, "text/html", PAGE_AdminMainPage );
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", PAGE_AdminMainPage);
+    sendCacheHeader(response);
+    request->send(response);
   }  );
   server.on ( "/config.html", send_network_configuration_html );
-  server.on ( "/info.html", []() {
+  server.on ( "/info.html", [](AsyncWebServerRequest *request) {
     Serial.println("info.html");
-    sendCacheHeader();
-    server.send_P ( 200, "text/html", PAGE_Information );
+
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", PAGE_Information);
+    sendCacheHeader(response);
+    request->send(response);
   }  );
   server.on ( "/ntp.html", send_NTP_configuration_html  );
   server.on ( "/general.html", send_general_html  );
-  server.on ( "/fabfarmer.html", []() {
-    sendCacheHeader();
-    server.send_P ( 200, "text/html", PAGE_FabFarmer );
+  server.on ( "/fabfarmer.html", [](AsyncWebServerRequest *request) {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", PAGE_FabFarmer);
+    sendCacheHeader(response);
+    request->send(response);
   } );
-  server.on ( "/style.css", []() {
+  server.on ( "/style.css", [](AsyncWebServerRequest *request) {
     Serial.println("style.css");
-    sendCacheHeader();
-    server.send_P ( 200, "text/css", PAGE_Style_css );
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", PAGE_Style_css);
+    sendCacheHeader(response);
+    request->send(response);
   } );
-  server.on ( "/microajax.js", []() {
+  server.on ( "/microajax.js", [](AsyncWebServerRequest *request) {
     Serial.println("microajax.js");
-    sendCacheHeader();
-    server.send_P ( 200, "application/javascript", PAGE_microajax_js );
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "application/javascript", PAGE_microajax_js);
+    sendCacheHeader(response);
+    request->send(response);
   } );
-  server.on ( "/chart.min.js", []() {
+  server.on ( "/chart.min.js", [](AsyncWebServerRequest *request) {
     Serial.println("chart.min.js");
-    sendCacheHeader();
-    server.send_P ( 200, "application/javascript", PAGE_chart_js );
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "application/javascript", PAGE_chart_js);
+    sendCacheHeader(response);
+    request->send(response);
   } );
   server.on ( "/admin/values", send_network_configuration_values_html );
   server.on ( "/admin/connectionstate", send_connection_state_values_html );
@@ -165,7 +200,7 @@ void setup ( void ) {
   server.on ( "/admin/generalvalues", send_general_configuration_values_html);
   server.on ( "/admin/devicename",     send_devicename_value_html);
 
-  server.onNotFound (handleNotFound);
+  server.onNotFound(handleNotFound);
   server.begin();
   Serial.println( "HTTP server started" );
   tkSecond.attach(1, Second_Tick);
@@ -177,7 +212,6 @@ void setup ( void ) {
 void loop ( void ) {
   // Als erstes wieder eine evtl. neue Seite "bereitstellen", danach werden ggf. Admin abgeschaltet, NTP aktualisiert etc.
   dnsServer.processNextRequest();
-  server.handleClient();
 
   if (AdminEnabled)
     {
@@ -189,7 +223,7 @@ void loop ( void ) {
   	}
     }
 
-  
+
   if (config.Update_Time_Via_NTP_Every  > 0 )
   {
     if (syncNtp) {
@@ -229,12 +263,13 @@ void loop ( void ) {
 
   if (config.SensRefreshTime > 0 && (cSens_Update > config.SensRefreshTime * 60 || Sens_Value == -1))
   {
-    Sens_Value = readprobe();
+    Sens_Value = s1.readProbe();
+    db.push(Sens_Value);
     Serial.println("Read sensor value - start");
     Serial.println(Sens_Value);
     cSens_Update = 0;
   }
-  
+
   if (Time_On && config.IoTOn && thing && WiFi.status() == WL_CONNECTED)
   {
     thing->handle();

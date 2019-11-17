@@ -73,31 +73,30 @@ Bitte warten....Konfiguration und Neustart.
 //  SEND HTML PAGE OR IF A FORM SUMBITTED VALUES, PROCESS THESE VALUES
 // 
 
-void send_network_configuration_html()
+void send_network_configuration_html(AsyncWebServerRequest *request)
 {
-	
-	if (server.args() > 0 )  // Save Settings
+	if (request->args() > 0 )  // Save Settings
 	{
 		String temp = "";
 		config.dhcp = false;
-		for ( uint8_t i = 0; i < server.args(); i++ ) {
-			if (server.argName(i) == "ssid") config.ssid =   urldecode(server.arg(i));
-			if (server.argName(i) == "password") config.password =    urldecode(server.arg(i)); 
-			if (server.argName(i) == "ip_0") if (checkRange(server.arg(i))) 	config.IP[0] =  server.arg(i).toInt();
-			if (server.argName(i) == "ip_1") if (checkRange(server.arg(i))) 	config.IP[1] =  server.arg(i).toInt();
-			if (server.argName(i) == "ip_2") if (checkRange(server.arg(i))) 	config.IP[2] =  server.arg(i).toInt();
-			if (server.argName(i) == "ip_3") if (checkRange(server.arg(i))) 	config.IP[3] =  server.arg(i).toInt();
-			if (server.argName(i) == "nm_0") if (checkRange(server.arg(i))) 	config.Netmask[0] =  server.arg(i).toInt();
-			if (server.argName(i) == "nm_1") if (checkRange(server.arg(i))) 	config.Netmask[1] =  server.arg(i).toInt();
-			if (server.argName(i) == "nm_2") if (checkRange(server.arg(i))) 	config.Netmask[2] =  server.arg(i).toInt();
-			if (server.argName(i) == "nm_3") if (checkRange(server.arg(i))) 	config.Netmask[3] =  server.arg(i).toInt();
-			if (server.argName(i) == "gw_0") if (checkRange(server.arg(i))) 	config.Gateway[0] =  server.arg(i).toInt();
-			if (server.argName(i) == "gw_1") if (checkRange(server.arg(i))) 	config.Gateway[1] =  server.arg(i).toInt();
-			if (server.argName(i) == "gw_2") if (checkRange(server.arg(i))) 	config.Gateway[2] =  server.arg(i).toInt();
-			if (server.argName(i) == "gw_3") if (checkRange(server.arg(i))) 	config.Gateway[3] =  server.arg(i).toInt();
-			if (server.argName(i) == "dhcp") config.dhcp = true;
+		for ( uint8_t i = 0; i < request->args(); i++ ) {
+			if (request->argName(i) == "ssid") config.ssid =   urldecode(request->arg(i));
+			if (request->argName(i) == "password") config.password =    urldecode(request->arg(i)); 
+			if (request->argName(i) == "ip_0") if (checkRange(request->arg(i))) 	config.IP[0] =  request->arg(i).toInt();
+			if (request->argName(i) == "ip_1") if (checkRange(request->arg(i))) 	config.IP[1] =  request->arg(i).toInt();
+			if (request->argName(i) == "ip_2") if (checkRange(request->arg(i))) 	config.IP[2] =  request->arg(i).toInt();
+			if (request->argName(i) == "ip_3") if (checkRange(request->arg(i))) 	config.IP[3] =  request->arg(i).toInt();
+			if (request->argName(i) == "nm_0") if (checkRange(request->arg(i))) 	config.Netmask[0] =  request->arg(i).toInt();
+			if (request->argName(i) == "nm_1") if (checkRange(request->arg(i))) 	config.Netmask[1] =  request->arg(i).toInt();
+			if (request->argName(i) == "nm_2") if (checkRange(request->arg(i))) 	config.Netmask[2] =  request->arg(i).toInt();
+			if (request->argName(i) == "nm_3") if (checkRange(request->arg(i))) 	config.Netmask[3] =  request->arg(i).toInt();
+			if (request->argName(i) == "gw_0") if (checkRange(request->arg(i))) 	config.Gateway[0] =  request->arg(i).toInt();
+			if (request->argName(i) == "gw_1") if (checkRange(request->arg(i))) 	config.Gateway[1] =  request->arg(i).toInt();
+			if (request->argName(i) == "gw_2") if (checkRange(request->arg(i))) 	config.Gateway[2] =  request->arg(i).toInt();
+			if (request->argName(i) == "gw_3") if (checkRange(request->arg(i))) 	config.Gateway[3] =  request->arg(i).toInt();
+			if (request->argName(i) == "dhcp") config.dhcp = true;
 		}
-		 server.send_P ( 200, "text/html", PAGE_WaitAndReload );
+		 request->send_P ( 200, "text/html", PAGE_WaitAndReload );
 		WriteConfig();
 		ConfigureWifi();
 		AdminTimeOutCounter=0;
@@ -105,7 +104,7 @@ void send_network_configuration_html()
 	}
 	else
 	{
-		server.send_P ( 200, "text/html", PAGE_NetworkConfiguration ); 
+		request->send_P ( 200, "text/html", PAGE_NetworkConfiguration ); 
 	}
 	Serial.println(__FUNCTION__); 
 }
@@ -116,7 +115,7 @@ void send_network_configuration_html()
 //   FILL THE PAGE WITH VALUES
 //
 
-void send_network_configuration_values_html()
+void send_network_configuration_values_html(AsyncWebServerRequest *request)
 {
 
 	String values ="";
@@ -136,7 +135,7 @@ void send_network_configuration_values_html()
 	values += "gw_2|" +  (String) config.Gateway[2] + "|input\n";
 	values += "gw_3|" +  (String) config.Gateway[3] + "|input\n";
 	values += "dhcp|" +  (String) (config.dhcp ? "checked" : "") + "|chk\n";
-	server.send ( 200, "text/plain", values);
+	request->send ( 200, "text/plain", values);
 	Serial.println(__FUNCTION__); 
 	
 }
@@ -146,7 +145,7 @@ void send_network_configuration_values_html()
 //   FILL THE PAGE WITH NETWORKSTATE & NETWORKS
 //
 
-void send_connection_state_values_html()
+void send_connection_state_values_html(AsyncWebServerRequest *request)
 {
 
 	String state = "N/A";
@@ -199,7 +198,7 @@ void send_connection_state_values_html()
 	String values ="";
 	values += "connectionstate|" +  state + "|div\n";
 	values += "networks|" +  Networks + "|div\n";
-	server.send ( 200, "text/plain", values);
+	request->send ( 200, "text/plain", values);
 	Serial.println(__FUNCTION__); 
 	
 }

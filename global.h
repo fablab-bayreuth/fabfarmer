@@ -1,7 +1,7 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
-ESP8266WebServer server(80);									// The Webserver
+AsyncWebServer server(80);									// The Webserver
 boolean firstStart = true;										// On firststart = true, NTP will try to get a valid time
 int AdminTimeOutCounter = 0;									// Counter for Disabling the AdminMode
 strDateTime DateTime;											// Global DateTime structure, will be refreshed every Second
@@ -19,9 +19,9 @@ int Sens_Value = -1;
 
 int LEDState = LOW;          // LEDState used to set the LED
 int LEDPWM = 2;               // LEDPWM used to set PWM rate
-long previousLED = 0;        // will store last time LED was updated
-long LEDinterval = 300;     // by PWM variable interval at which to blink (milliseconds)
-long LEDpuls = 300;         // interval at which to blink (milliseconds)
+unsigned long previousLED = 0;        // will store last time LED was updated
+unsigned long LEDinterval = 300;     // by PWM variable interval at which to blink (milliseconds)
+int LEDpuls = 300;         // interval at which to blink (milliseconds)
 
 ThingerWifi *thing; // Platzhalter für spaetere ThingerWifi Instanz
 
@@ -104,30 +104,6 @@ class DataBuffer {
 };
 
 DataBuffer db;
-
-
-
-
-int readprobe()
-{
-    int result;
-
-    digitalWrite(D5, LOW);
-    digitalWrite(D6, HIGH); // Sensor ON
-
-    delay(90); // vorher ist der Wert nicht stabil   
-    result = map((1023-analogRead(A0)),config.SensCalMin,config.SensCalMax,0,config.SensCalc);
- 
-    digitalWrite(D5, LOW);
-    digitalWrite(D6, LOW); // Sensor OFF
-
-    db.push(result);
-    
-    return result;  
-}
-
-
-
 
 /*
 **
@@ -387,8 +363,8 @@ void Second_Tick()
 }
 
 
-void sendCacheHeader() {
-  server.sendHeader("Cache-Control", "public, max-age=3600", false);
+void sendCacheHeader(AsyncWebServerResponse *response) {
+  response->addHeader("Cache-Control", "public, max-age=3600");
 }
 
 void blinkLED () 

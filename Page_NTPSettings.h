@@ -72,43 +72,33 @@ window.onload = function ()
 )=====";
 
 
-void send_NTP_configuration_html()
+void send_NTP_configuration_html(AsyncWebServerRequest *request)
 {
-	
-	 
-	if (server.args() > 0 )  // Save Settings
+	if (request->args() > 0 )  // Save Settings
 	{
 		config.daylight = false;
 		String temp = "";
-		for ( uint8_t i = 0; i < server.args(); i++ ) {
-			if (server.argName(i) == "ntpserver") config.ntpServerName = urldecode( server.arg(i)); 
-			if (server.argName(i) == "update") config.Update_Time_Via_NTP_Every =  server.arg(i).toInt(); 
-			if (server.argName(i) == "tz") config.timezone =  server.arg(i).toInt(); 
-			if (server.argName(i) == "dst") config.daylight = true; 
+		for ( uint8_t i = 0; i < request->args(); i++ ) {
+			if (request->argName(i) == "ntpserver") config.ntpServerName = urldecode( request->arg(i)); 
+			if (request->argName(i) == "update") config.Update_Time_Via_NTP_Every =  request->arg(i).toInt(); 
+			if (request->argName(i) == "tz") config.timezone =  request->arg(i).toInt(); 
+			if (request->argName(i) == "dst") config.daylight = true; 
 		}
 		WriteConfig();
 		firstStart = true;
 	}
  
-	server.send_P ( 200, "text/html", PAGE_NTPConfiguration ); 
+	request->send_P ( 200, "text/html", PAGE_NTPConfiguration ); 
 	Serial.println(__FUNCTION__); 
-	
 }
 
-
-
-
-
-
-void send_NTP_configuration_values_html()
+void send_NTP_configuration_values_html(AsyncWebServerRequest *request)
 {
-		
 	String values ="";
 	values += "ntpserver|" + (String) config.ntpServerName + "|input\n";
 	values += "update|" +  (String) config.Update_Time_Via_NTP_Every + "|input\n";
 	values += "tz|" +  (String) config.timezone + "|input\n";
 	values += "dst|" +  (String) (config.daylight ? "checked" : "") + "|chk\n";
-	server.send ( 200, "text/plain", values);
+	request->send ( 200, "text/plain", values);
 	Serial.println(__FUNCTION__); 
-	
 }
