@@ -1,6 +1,6 @@
 /*
 ========================================================================================
-  FabFarmer Version 1.4  by JTL / thirsch
+  FabFarmer Version 1.5  by JTL / thirsch
   FabLab-Bayreuth e.V.
   fablab-bayreuth.de
 
@@ -47,7 +47,7 @@
 #include "helpers.h"
 #include "global.h"
 
-#define PGNV "1.4"
+#define PGNV "1.5"
 #define ACCESS_POINT_NAME  "FabFarmer"
 #define ACCESS_POINT_PASSWORD  "12345678"
 #define AdminTimeOut 600  // Defines the Time in Seconds, when the Admin-Mode will be diabled
@@ -177,19 +177,22 @@ void setup ( void ) {
   } );
   server.on ( "/style.css", [](AsyncWebServerRequest *request) {
     Serial.println("style.css");
-    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", PAGE_Style_css);
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", style_css_gz, sizeof(style_css_gz));
+    response->addHeader("Content-Encoding", "gzip");
     sendCacheHeader(response);
     request->send(response);
   } );
   server.on ( "/microajax.js", [](AsyncWebServerRequest *request) {
     Serial.println("microajax.js");
-    AsyncWebServerResponse *response = request->beginResponse_P(200, "application/javascript", PAGE_microajax_js);
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "application/javascript", microajax_js_gz, sizeof(microajax_js_gz));
+    response->addHeader("Content-Encoding", "gzip");
     sendCacheHeader(response);
     request->send(response);
   } );
   server.on ( "/chart.min.js", [](AsyncWebServerRequest *request) {
     Serial.println("chart.min.js");
-    AsyncWebServerResponse *response = request->beginResponse_P(200, "application/javascript", PAGE_chart_js);
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "application/javascript", chart_js_gz, sizeof(chart_js_gz));
+    response->addHeader("Content-Encoding", "gzip");
     sendCacheHeader(response);
     request->send(response);
   } );
@@ -198,7 +201,7 @@ void setup ( void ) {
   server.on ( "/admin/sensrefreshtimes", send_information_values_html );
   server.on ( "/admin/ntpvalues", send_NTP_configuration_values_html );
   server.on ( "/admin/generalvalues", send_general_configuration_values_html);
-  server.on ( "/admin/devicename",     send_devicename_value_html);
+  server.on ( "/admin/devicename", send_devicename_value_html);
 
   server.onNotFound(handleNotFound);
   server.begin();
@@ -206,6 +209,7 @@ void setup ( void ) {
   tkSecond.attach(1, Second_Tick);
   UDPNTPClient.begin(2390);  // Port for NTP receive
   ConfigureIoT();
+  WiFi.scanNetworks(true);
 }
 
 

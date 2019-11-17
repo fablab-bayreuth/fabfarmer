@@ -160,16 +160,16 @@ void send_connection_state_values_html(AsyncWebServerRequest *request)
 
 
 
-	 int n = WiFi.scanNetworks();
+	 int n = WiFi.scanComplete();
  
-	 if (n == 0)
-	 {
-		 Networks = "<font color='#FF0000'>Kein Netzwerk gefunden!</font>";
-	 }
+	if (n == -2) {
+    	WiFi.scanNetworks(true);
+		Networks = "<font color='#FF0000'>Scan läuft noch... Bitte in einigen Sekunden aktualisieren!</font>";
+	} else if (n == 0) {
+		Networks = "<font color='#FF0000'>Kein Netzwerk gefunden!</font>";
+	}
 	else
-    {
-	 
-		
+    {	
 		Networks = "Es wurden " +String(n) + " Netzwerke gefunden<br>";
 		Networks += "<table border='0' cellspacing='0' cellpadding='3'>";
 		Networks += "<tr bgcolor='#DDDDDD' ><td><strong>Name</strong></td><td><strong>Empfang</strong></td><td><strong>Verschlüsselt</strong></td><tr>";
@@ -193,6 +193,11 @@ void send_connection_state_values_html(AsyncWebServerRequest *request)
 			Networks += "<tr><td><a href='javascript:selssid(\""  +  String(WiFi.SSID(i))  + "\")'>"  +  String(WiFi.SSID(i))  + "</a></td><td>" +  String(quality) + "%</td><td>" +  String((WiFi.encryptionType(i) == ENC_TYPE_NONE)?" ":"*")  + "</td></tr>";
 		}
 		Networks += "</table>";
+
+		WiFi.scanDelete();
+		if(WiFi.scanComplete() == -2){
+			WiFi.scanNetworks(true);
+		}
 	}
    
 	String values ="";
